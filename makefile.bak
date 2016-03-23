@@ -1,0 +1,26 @@
+LIB_PATH = /usr/home/zhanghan5/lib
+LIB = -ljson_linux-gcc-4.4.7_libmt
+INC_PATH = ../include/
+
+EXES = test
+
+
+.PHONY: all     
+
+all: $(EXES)
+
+test: MultiWayTree.o mtreeTest.o
+	$(CXX) $(CFLAGS) -o $@ $^ -L$(LIB_PATH) -L. $(LIB)
+
+.SUFFIXES: .o .cpp .h
+
+.cpp.o: 
+	$(CXX) $(CFLAGS) -c $< -I$(INC_PATH) -I.
+
+
+.PHONY: clean
+
+clean: 
+	rm -rf $(EXES)
+	rm -rf *.o
+
