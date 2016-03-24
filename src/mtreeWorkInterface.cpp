@@ -2,6 +2,8 @@
 
 DYN_WORK(mtreeWorkInterface);
 
+CMultiWayTree mtreeWorkInterface::mtreeIns = CMultiWayTree(new mtreeNode("0000000000000000"),4,500);
+
 int mtreeWorkInterface::work_core(json_object *req_json, 
 		char* &p_out_string, int& n_out_len, int64_t req_id){
 	int result = 1;

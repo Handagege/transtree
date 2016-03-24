@@ -25,6 +25,7 @@ def request(host, port, requestStr, log_id = 0, timeout = 1):
                 data = s.recv(body_len)
                 print data
         except Exception, e:
+                print e
                 pass
         s.close()
         return False

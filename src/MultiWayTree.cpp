@@ -30,7 +30,8 @@ CMultiWayTree::~CMultiWayTree()
 void CMultiWayTree::insertQueryMid(const string& queryMid, const string& originMid)
 {
         mtreeNode* tqueryNode = new mtreeNode(originMid,0);
-        insert(m_root,tqueryNode);
+        if( insert(m_root,tqueryNode).second == false )
+                delete tqueryNode;
         SnodeIter origin_it = getOriginIter(originMid);
         insert(*origin_it,new mtreeNode(queryMid,(*origin_it)->hierarchy+1));
 }
@@ -50,7 +51,7 @@ void CMultiWayTree::destoryQueryMid(const string& queryMid, const string& origin
                 if((*origin_it)->sChildren.empty())
                 {
                         destoryKeyNode(*origin_it);
-                        m_root->sChildren.erase(*origin_it);
+                        m_root->sChildren.erase(origin_it);
                 }
         }
 }
@@ -62,7 +63,7 @@ void CMultiWayTree::destoryRootMid(const string& originMid)
         if( origin_it != m_root->sChildren.end() )
         {
                 destoryKeyNode(*origin_it);
-                m_root->sChildren.erase(*origin_it);
+                m_root->sChildren.erase(origin_it);
         }
 }
 

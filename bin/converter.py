@@ -13,6 +13,7 @@ except Exception,data:
     import json
 
 import lcsreq
+import binserverclient
 
 
 '''
@@ -95,10 +96,10 @@ class WeiboFirehose(Firehose):
             event = self.firehose_dict['text']['event']
             if event == "add":
                 result_dict['kmid'] = weibo_content['mid']
-                result_dict['uid'] = weibo_content['user']['id']
+                #result_dict['uid'] = weibo_content['user']['id']
                 if 'parent_rt_id_db' in weibo_content:
                         result_dict['type'] = 'transmit'
-                        result_dict['pmid'] = weibo_content['parent_rt_id_db']
+                        result_dict['pmid'] = str(weibo_content['parent_rt_id_db'])
                         result_dict['rmid'] = weibo_content['retweeted_status']['mid']
                 else:
                         result_dict['type'] = 'original'
@@ -110,18 +111,24 @@ class WeiboFirehose(Firehose):
 
 def convertWeribo():
         minute   = float(sys.argv[1])
+        host = sys.argv[2]
+        port = int(sys.argv[3])
+
         f_weibo= WeiboFirehose()
         tbeg = int(time.time())
         duration = 60 * minute
         queryDict = {}
         queryDict['api'] = 'mtree'
-        upperQueryNodeNum = 100
+        upperQueryNodeNum = 1000
         queryNodeSet = set()
         rmidKey = 'rmid'
         pmidKey = 'pmid'
         kmidKey = 'kmid'
         cmdKey = 'cmd'
         weiboType = 'type'
+        ISOTIMEFORMAT='%Y-%m-%d %X'
+        insertFlag = False
+        cmdCount = 1
         while True:
                 weibo_route_data = f_weibo.read_line()
                 if weibo_route_data:
@@ -130,25 +137,37 @@ def convertWeribo():
                                 if len(queryNodeSet) < upperQueryNodeNum:
                                         queryNodeSet.add(weibo_route_data[kmidKey])
                                         queryDict[cmdKey] = 'insertqn'
-                                        print f_weibo.sinceId,json.dumps(queryDict)
+                                        insertFlag = True
                         elif weibo_route_data[weiboType] == 'transmit' and \
                                 weibo_route_data[rmidKey] in queryNodeSet:
                                         queryDict[cmdKey] = 'insertfn'
-                                        print f_weibo.sinceId,json.dumps(queryDict)
-                        queryDict.clear()
+                                        insertFlag = True
+                                        #lcsreq.request(host,port,json.dumps(queryDict))
+                        #queryDict.clear()
+                        if insertFlag: 
+                                print "\n*********[cmd number : {0}]*********".format(cmdCount)
+                                cmdCount += 1
+                                print queryDict
+                                resq = binserverclient.reqbinserver_cluster([{"host":host,"port":port}],0,json.dumps(queryDict))
+                                print resq
+                                print time.strftime(ISOTIMEFORMAT, time.localtime())
+                        insertFlag = False
                 if time.time() - tbeg >= duration:
                         break
 
 def convertLocal():
         inputFile = sys.argv[1]
+        host = sys.argv[2]
+        port = int(sys.argv[3])
         f = open(inputFile,'r')
         data = json.load(f)
         for i in data:
                 time.sleep(1)
-                lcsreq.request()
+                lcsreq.request(host,port,json.dumps(i))
         
 
 
 if __name__ == '__main__':
-        convertLocal()
+        #convertLocal()
+        convertWeribo()
 

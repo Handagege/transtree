@@ -28,7 +28,7 @@ class mtreeWorkInterface : public WorkInterface{
                 void manager(const Json::Value& req_root,Json::Value& resp_root);
                 void printTree();
                 
-                CMultiWayTree mtreeIns;
+                static CMultiWayTree mtreeIns;
 			
 };
 #endif

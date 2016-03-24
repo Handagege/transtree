@@ -80,11 +80,6 @@ if __name__ == "__main__":
 
     log_id = random.randint(0, 99999999)
     resp_str = reqbinserver_cluster([{"host":host, "port":port}], 0, req_str, log_id)
-    #import simplejson
-    #import zlib
-    #try:
-	#    print zlib.decompress(resp_str)
-    #except Exception, data:
     print resp_str
     #print simplejson.loads(resp_str)
     end = time.time()

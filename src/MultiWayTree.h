@@ -50,6 +50,7 @@ public:
 
 typedef set<mtreeNode *, nodeComp<mtreeNode *> > SnodeContainer;
 typedef SnodeContainer::iterator SnodeIter;
+typedef pair<SnodeIter, bool> SnodePair;
 
 
 class CMultiWayTree
@@ -82,7 +83,7 @@ private:
         //一条查询链路只可能存在一个挂载点
         void searchRoute(const string& queryMid, mtreeNode* routeNode, mtreeNode*& singleResult);
 
-        void insert(mtreeNode* parentNode,mtreeNode* keyNode){ parentNode->sChildren.insert(keyNode); }
+        SnodePair insert(mtreeNode* parentNode,mtreeNode* keyNode){ return parentNode->sChildren.insert(keyNode); }
 
         //根据父节点获得mid存储迭代器
         SnodeIter getIter(mtreeNode* parentNode,const string& keyMid);
