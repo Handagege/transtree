@@ -20,7 +20,7 @@ OBJS = $(SRC_PATH)mtreeWorkInterface.o
 OBJS += $(SRC_PATH)MultiWayTree.o
 OBJS += ../src/ini_file.o
 
-ALL_BIN = ../lib/mtreeWorkInterface.so
+ALL_BIN = ../lib/mtreeWorkInterface.so ../lib/wooTestWorkInterface.so
 
 
 .PHONY: all     
@@ -31,6 +31,9 @@ all: $(ALL_BIN)
 	test -d ../lib || mkdir ../lib
 	$(CC) $(CFLAGS) -o $@ $^ $(LIB_LINK)
 
+../lib/wooTestWorkInterface.so : ./testSrc/wooTestWorkInterface.o ../src/ini_file.o
+	test -d ../lib || mkdir ../lib
+	$(CC) $(CFLAGS) -g -o $@ $^ $(LIB_LINK)
 
 %.o:%.cpp
 	$(CC) $(CFLAGS) -c -o $@ $^ $(INC_PATH) -I$(SRC_PATH) -pg
@@ -44,4 +47,5 @@ all: $(ALL_BIN)
 clean: 
 	rm -rf $(ALL_BIN)
 	rm -rf ./src/*.o
+	rm -rf ./testSrc/*.o
 

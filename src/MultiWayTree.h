@@ -1,5 +1,5 @@
 // 文件名：CMultiWayTree.h
-// 说明：DRE-Predictor接口声明
+// 说明：转发链路管理接口声明
 // 最后更新：
 //      v1.0 - 2016.03.24 by zhanghan(zhanghan5@staff.weibo.com)
 /////////////////////////////////////////////////////////////////
@@ -15,6 +15,7 @@
 #include <string>
 #include <algorithm>
 #include <time.h>
+#include "pthread.h"
 
 using namespace std;
 
@@ -212,5 +213,7 @@ private:
         int32_t m_upperHierarchy;               //最大层级数
         uint32_t m_upperChildrenNum;            //最大孩子树
         uint32_t m_upperQnNumPerOn;             //原创节点下最多挂载监控节点数
+
+        pthread_mutex_t m_mutex;
 };
 #endif /* _MULTI_WAY_TREE_H */

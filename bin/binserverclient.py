@@ -10,7 +10,7 @@ except Exception, data:
 
 def reqbinserver(host, port, req_str, log_id = 0, timeout_usecs = 1500000) :
     address = (host, port)
-    print address
+    #print address
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try :
         s.settimeout(timeout_usecs / 1000000.0)
@@ -56,9 +56,8 @@ def reqbinserver_cluster(cluster, server_idx, req_str,
     server_num = len(cluster)
 
     for i in range(0, retry_times):
-        server = cluster[(i + server_idx) % server_num]
+        server = cluster[server_idx % server_num]
         resp = reqbinserver(server["host"], server["port"], req_str, log_id, timeout_usecs )
-        print i
         if resp != False:
             return resp
     return False

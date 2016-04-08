@@ -6,6 +6,7 @@ CMultiWayTree::CMultiWayTree()
         m_root = new mtreeNode("0000000000000000");
         m_upperHierarchy = 4;
         m_upperChildrenNum = 3;
+        pthread_mutex_init(&m_mutex,NULL);
         cout << "----upper hierarchy : " << m_upperHierarchy << endl;
         cout << "----upper children num : " << m_upperChildrenNum << endl;
 }
@@ -16,12 +17,14 @@ CMultiWayTree::CMultiWayTree(mtreeNode* root, int32_t upperHierarchy, uint32_t u
         m_root = root;
         m_upperHierarchy = upperHierarchy;
         m_upperChildrenNum = upperChildrenNum;
+        pthread_mutex_init(&m_mutex,NULL);
 }
 
 
 CMultiWayTree::~CMultiWayTree()
 {
         destoryTotalTree();
+        pthread_mutex_destroy(&m_mutex);
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -73,6 +76,7 @@ void CMultiWayTree::analysisQueryMid(const string& queryMid, const string& origi
 
 void CMultiWayTree::insertFirehoseMid(const string& keyMid, const string& parentMid, const string& originMid)
 {
+        pthread_mutex_lock(&m_mutex);
         vector<mtreeNode*> parentVec;
         search(parentMid,originMid,parentVec);
         vector<mtreeNode*>::iterator vm_it = parentVec.begin();
@@ -85,6 +89,7 @@ void CMultiWayTree::insertFirehoseMid(const string& keyMid, const string& parent
                         prune(*vm_it);
                 ++vm_it;
         }
+        pthread_mutex_unlock(&m_mutex);
 }
 
 

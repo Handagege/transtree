@@ -2,19 +2,17 @@
 # -*- coding: utf-8 -*-
 import time
 import sys
-import traceback
 import urllib2
 import random
+import socket
+import struct
 from time import sleep
-from uuid import uuid4
 try:
     import simplejson as json
 except Exception,data:
     import json
 
-import lcsreq
 import binserverclient
-
 
 '''
 从firehose中读取数据
@@ -33,8 +31,6 @@ class Firehose(object):
     def __init__(self, baseurl):
         self.type = 'firehose'
         self.sinceId = "false"
-        # 为了防止firehose真的读到了空的数据
-        self.empty_set = set([])
         self.baseurl = baseurl
         self.open_firehose()
         
@@ -109,51 +105,154 @@ class WeiboFirehose(Firehose):
         return result_dict
 
 
-def convertWeribo():
-        minute   = float(sys.argv[1])
-        host = sys.argv[2]
-        port = int(sys.argv[3])
+#监听器
+class Listener():
+        def __init__(self,host,listenPort):
+                try:
+                        self.listenSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        self.listenSock.bind((host, listenPort))
+                        self.listenSock.listen(1)
+                except:
+                        print 'init socket err!'
+                        exit(0)
+                self.queryNodeSet = set()
+                self.conn,self.addr = self.listenSock.accept()
+                self.conn.settimeout(0.5)
+                print self.conn,self.addr
 
+        def answer(self):
+                try:
+                        cmdJson = self.conn.recv(1024)
+                        print cmdJson
+                        if cmdJson:
+                                cmdDict = json.loads(cmdJson)
+                                self.conn.sendall(self.deal(cmdDict))
+                                print 'query node number : {0}'.format(len(self.queryNodeSet))
+                        else:
+                                return False
+                except socket.timeout:
+                        #pass
+                        print 'time out'
+                return True
+
+        
+        def labCommonAnswer(self):
+                try:
+                        reqHead = self.conn.recv(16)
+                        if not reqHead:
+                                print 'None data'
+                                return False
+                        body_len, log_id, tmp1, tmp2 = struct.unpack('IIII', reqHead)
+                        if body_len == 0:
+                                reqData = 'None data'
+                        else :
+                                recved_data = []
+                                recved_len = 0 
+                                while recved_len < body_len:
+                                        data = self.conn.recv(body_len - recved_len)
+                                        if len(data) <= 0:
+                                                return False
+                                        recved_data.append(data)
+                                        recved_len += len(data)
+                                reqData = ''.join(recved_data)
+                        
+                        print reqData
+                        cmdDict = json.loads(reqData)
+                        respStr = self.deal(cmdDict)
+                        head = struct.pack('IIII', len(respStr), log_id, 0, 0)
+                        ret = self.conn.send(head)
+                        if ret != len(head) :
+                                return False
+                        self.conn.sendall(respStr)
+                        print respStr
+                except socket.timeout:
+                        print 'time out'
+                except Exception, e:
+                        print e
+                        return False
+                return True
+
+
+        def deal(self,cmdDict):
+                mids = set(cmdDict['mids'])
+                if cmdDict['cmd'] == 'add':
+                        self.queryNodeSet.update(mids)
+                        return 'add succ'
+                if cmdDict['cmd'] == 'del':
+                        self.queryNodeSet -= mids
+                        return 'del succ'
+                else:
+                        print "command not found ..."
+                        return 'check cmd string'
+
+        def reConnect(self):
+                self.conn.close()
+                self.conn,self.addr = self.listenSock.accept()
+                print self.addr
+                self.conn.settimeout(0.5)
+
+
+
+rmidKey = 'rmid'
+pmidKey = 'pmid'
+kmidKey = 'kmid'
+cmdKey = 'cmd'
+weiboType = 'type'
+ISOTIMEFORMAT='%Y-%m-%d %X'
+
+
+def convertWeribo(minute,host,port,listenHost,listenPort=10021):
         f_weibo= WeiboFirehose()
+        lis = Listener(listenHost,listenPort)
         tbeg = int(time.time())
         duration = 60 * minute
         queryDict = {}
         queryDict['api'] = 'mtree'
-        upperQueryNodeNum = 1000
-        queryNodeSet = set()
-        rmidKey = 'rmid'
-        pmidKey = 'pmid'
-        kmidKey = 'kmid'
-        cmdKey = 'cmd'
-        weiboType = 'type'
-        ISOTIMEFORMAT='%Y-%m-%d %X'
+        upperQueryNodeNum = 50
         insertFlag = False
         cmdCount = 1
+
         while True:
-                weibo_route_data = f_weibo.read_line()
-                if weibo_route_data:
-                        queryDict['body'] = weibo_route_data
-                        if weibo_route_data[weiboType] == 'original':
-                                if len(queryNodeSet) < upperQueryNodeNum:
-                                        queryNodeSet.add(weibo_route_data[kmidKey])
-                                        queryDict[cmdKey] = 'insertqn'
-                                        insertFlag = True
-                        elif weibo_route_data[weiboType] == 'transmit' and \
-                                weibo_route_data[rmidKey] in queryNodeSet:
-                                        queryDict[cmdKey] = 'insertfn'
-                                        insertFlag = True
-                                        #lcsreq.request(host,port,json.dumps(queryDict))
-                        #queryDict.clear()
-                        if insertFlag: 
-                                print "\n*********[cmd number : {0}]*********".format(cmdCount)
-                                cmdCount += 1
-                                print queryDict
-                                resq = binserverclient.reqbinserver_cluster([{"host":host,"port":port}],0,json.dumps(queryDict))
-                                print resq
-                                print time.strftime(ISOTIMEFORMAT, time.localtime())
-                        insertFlag = False
+                answerFlag = lis.labCommonAnswer()
+                print answerFlag
+                if not answerFlag:
+                        lis.reConnect()
+
+                #读取firehose微博数据
+                #weibo_route_data = f_weibo.read_line()
+                #if weibo_route_data:
+                #        #构造查询字串
+                #        queryDict['body'] = weibo_route_data
+                #        if weibo_route_data[weiboType] == 'original':
+                #                if len(lis.queryNodeSet) < upperQueryNodeNum:
+                #                        lis.queryNodeSet.add(weibo_route_data[kmidKey])
+                #                        queryDict[cmdKey] = 'insertqn'
+                #                        insertFlag = True
+                #        elif weibo_route_data[weiboType] == 'transmit' and \
+                #                weibo_route_data[rmidKey] in lis.queryNodeSet:
+                #                        queryDict[cmdKey] = 'insertfn'
+                #                        insertFlag = True
+                #        if insertFlag: 
+                #                reqStr = json.dumps(queryDict)
+                #                respStr = binserverclient.reqbinserver_cluster([{"host":host,"port":port}],0,reqStr)
+                #                printCMDinfo(cmdCount,reqStr,respStr)
+                #                cmdCount += 1
+                #        insertFlag = False
+                #else:
+                #        pass
+                #        #print "None data"
                 if time.time() - tbeg >= duration:
                         break
+        lis.conn.close()
+
+
+
+def printCMDinfo(cmdCount,reqStr,respStr):
+        print "\n*********[cmd number : {0}]*********".format(cmdCount)
+        print "requst : {0}".format(reqStr)
+        print "response : {0}".format(respStr)
+        print "at time : -- {0} --".format(time.strftime(ISOTIMEFORMAT, time.localtime()))
+
 
 def convertLocal():
         inputFile = sys.argv[1]
@@ -163,11 +262,16 @@ def convertLocal():
         data = json.load(f)
         for i in data:
                 time.sleep(1)
-                lcsreq.request(host,port,json.dumps(i))
-        
+                #lcsreq.request(host,port,json.dumps(i))
 
 
 if __name__ == '__main__':
-        #convertLocal()
-        convertWeribo()
+        if len(sys.argv) != 5:
+                print "case arguments : <runTimePeriod> <requestHost> <requestPort> <listenPort>"
+                exit(0)
+        minute   = float(sys.argv[1])
+        host = sys.argv[2]
+        port = int(sys.argv[3])
+        listenPort = int(sys.argv[4])
+        convertWeribo(minute,host,port,'10.77.96.32',listenPort)
 
