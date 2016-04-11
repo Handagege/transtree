@@ -5,6 +5,7 @@ import json
 import random
 import time
 import binserverclient
+import sys
 
 
 def testTcpReq():
@@ -18,8 +19,8 @@ def testTcpReq():
                 if count > 5:
                         break
 		time.sleep(0.1)  
-	        reqDict = {"cmd":cmdList[random.randint(0,1)]}
-		reqDict["mids"] = random.sample(mids,random.randint(1,10))
+	        reqDict = {'cmd':cmdList[random.randint(0,1)]}
+		reqDict['mids'] = random.sample(mids,random.randint(1,10))
 		reqJson = json.dumps(reqDict)
 		print('send to server with value: '+ reqJson)
 		sock.sendall(reqJson)    
@@ -36,21 +37,50 @@ def testWooReq():
                 if count > 9:
                         break
 		time.sleep(1)  
-	        reqDict = {"cmd":cmdList[random.randint(0,1)],"api":"wooTest"}
-		reqDict["mids"] = random.sample(mids,random.randint(1,10))
+	        reqDict = {'cmd':cmdList[random.randint(0,1)],'api':'wooTest'}
+		reqDict['mids'] = random.sample(mids,random.randint(1,10))
 		reqJson = json.dumps(reqDict)
-                respStr = binserverclient.reqbinserver_cluster([{"host":'10.77.96.32',"port":10022}],0,reqJson)
+                respStr = binserverclient.reqbinserver_cluster([{'host':'10.77.96.32','port':10022}],0,reqJson)
                 printCMDinfo(count,reqJson,respStr)
                 count += 1
+
+
+def sendMonitoringMid():
+        if len(sys.argv) != 4:
+                print 'case <cmd> <rmid> <kmid>'
+                exit(0)
+        reqDict = {'cmd':'insertqn','api':'mtree','body':{'rmid':sys.argv[2],'kmid':sys.argv[3]}}
+        reqJson = json.dumps(reqDict)
+        respStr = binserverclient.reqbinserver_cluster([{'host':'10.77.96.32','port':10022}],0,reqJson)
+        printCMDinfo(1,reqJson,respStr)
+
+
+def recvMonitoringMid():
+        reqDict = {'cmd':'analysis','api':'mtree','body':''}
+        reqJson = json.dumps(reqDict)
+        respStr = binserverclient.reqbinserver_cluster([{'host':'10.77.96.32','port':10022}],0,reqJson)
+        printCMDinfo(1,reqJson,respStr)
+
+
+def errorInput():
+        print 'Can\'t find this command...'
+
 
 ISOTIMEFORMAT = '%Y-%m-%d %X'
 
 def printCMDinfo(cmdCount,reqStr,respStr):
-        print "\n*********[cmd number : {0}]*********".format(cmdCount)
-        print "requst : {0}".format(reqStr)
-        print "response : {0}".format(respStr)
-        print "at time : -- {0} --".format(time.strftime(ISOTIMEFORMAT, time.localtime()))
+        print '\n*********[cmd number : {0}]*********'.format(cmdCount)
+        print 'requst : {0}'.format(reqStr)
+        print 'response : {0}'.format(respStr)
+        print 'at time : -- {0} --'.format(time.strftime(ISOTIMEFORMAT, time.localtime()))
 
 
 if __name__=='__main__':
-        testWooReq()
+        cmd = sys.argv[1]
+        cmdDict = {}
+        cmdDict['send'] = sendMonitoringMid
+        cmdDict['recv'] = recvMonitoringMid
+        f = cmdDict.get(cmd,errorInput)
+        f()
+
+

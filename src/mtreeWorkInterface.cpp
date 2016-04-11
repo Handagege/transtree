@@ -31,6 +31,11 @@ void mtreeWorkInterface::manager(const Json::Value& req_root,Json::Value& resp_r
         string kmid = req_root["body"]["kmid"].asString();
         if( cmd == "insertqn" )
         {
+                Json::Value req_filter_root,rmids;
+                req_filter_root["cmd"] = "add";
+                rmids.append(rmid);
+                req_filter_root["mids"] = rmids;
+                pushToFilterList(req_filter_root);
                 cout << "@insert query node < rmid : " << rmid << " | kmid : " << kmid << " >" << endl;
                 mtreeIns.insertQueryMid(kmid,rmid);
                 resp_root["status"] = "done";
@@ -45,8 +50,18 @@ void mtreeWorkInterface::manager(const Json::Value& req_root,Json::Value& resp_r
         }
         else if( cmd == "deleteqn" )
         {
+                Json::Value req_filter_root,rmids;
+                req_filter_root["cmd"] = "del";
+                rmids.append(rmid);
+                req_filter_root["mids"] = rmids;
+                pushToFilterList(req_filter_root);
                 cout << "@delete query node < rmid : " << rmid << " | kmid : " << kmid << " >" << endl;
                 mtreeIns.destoryQueryMid(kmid,rmid);
+                resp_root["status"] = "done";
+        }
+        else if( cmd == "analysis" )
+        {
+                printTree();
                 resp_root["status"] = "done";
         }
         else
@@ -55,10 +70,26 @@ void mtreeWorkInterface::manager(const Json::Value& req_root,Json::Value& resp_r
                 resp_root["status"] = "undone";
                 resp_root["info"] = "can\'t find the command";
         }
-        printTree();
+        //printTree();
 
 }
 
+
+void mtreeWorkInterface::pushToFilterList(Json::Value req_filter_root)
+{
+        char* p_result;
+        char split_char, second_split_char;
+        WooDbInterface* pFilterDbInterface = (WooDbInterface*)GetDbInterface("EXAMPLE_WOO_DB");
+        int filter_result = pFilterDbInterface->s_get(0, JsonConv::CppObj2String(req_filter_root).c_str(),
+                p_result, split_char, second_split_char);
+        if(filter_result == 1)
+        {
+                cout << "@" << req_filter_root["cmd"].asString() << "root in filter list ... done" << endl;
+                cout << "\'pushToFilterList\' result : " << p_result << endl;
+        }
+        else
+                cout << "!some error occur on communicate with filter server" << endl;
+}
 
 
 void mtreeWorkInterface::printTree()

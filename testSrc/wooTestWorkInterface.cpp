@@ -16,7 +16,7 @@ int wooTestWorkInterface::work_core(json_object *req_json,
         
         cout << "[ cmd : " << req_root["cmd"].asString() << " mids : ";
         for(uint32_t i=0; i<req_root["mids"].size();++i)
-                cout << req_root["mids"][i] << " ";
+                cout << req_root["mids"][i].asString() << " ";
         cout << "]" << endl;
 
         req_filter_root["cmd"] = req_root["cmd"];

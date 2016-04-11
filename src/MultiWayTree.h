@@ -137,10 +137,15 @@ public:
         // 返回值:
         void preOrder(mtreeNode* keyNode);
 
+        bool getSubChildren(const string& queryMid, const string& originMid, vector<mtreeNode*>& result);
+
         // 函数名：
         // 说明：析构时释放整个树的堆存储空间
         void destoryTotalTree(){ destoryKeyNode(m_root); }
 private:
+
+        bool getSubChildren(mtreeNode* keyNode, vector<mtreeNode*>& result);
+
         // 函数名：
         // 说明：搜索获得节点位置
         // 参数：

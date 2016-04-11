@@ -104,6 +104,38 @@ void CMultiWayTree::preOrder(mtreeNode* keyNode)
 }
 
 
+bool CMultiWayTree::getSubChildren(mtreeNode* keyNode, vector<mtreeNode*>& result)
+{
+        if(keyNode != NULL)
+        {
+                result.push_back(keyNode);
+                for(SnodeIter sn_it = keyNode->sChildren.begin();sn_it != keyNode->sChildren.end();++sn_it)
+                        getSubChildren(*sn_it,result);
+        }
+}
+
+
+bool CMultiWayTree::getSubChildren(const string& queryMid, const string& originMid, vector<mtreeNode*>& result)
+{
+        SnodeIter origin_it = getOriginIter(originMid);
+        if( origin_it != m_root->sChildren.end() )
+        {
+                SnodeIter query_it = getIter(*origin_it,queryMid);
+                if( query_it != (*origin_it)->sChildren.end() )
+                        getSubChildren(*query_it,result);
+                else
+                {
+                        return false;
+                }
+        }
+        else
+        {
+                return false;
+        }
+        return true;
+}
+
+
 void CMultiWayTree::searchRoute(const string& queryMid, mtreeNode* routeNode, mtreeNode*& singleResult)
 {
         if(routeNode != NULL && singleResult == NULL)

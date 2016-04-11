@@ -120,7 +120,7 @@ class WeiboFirehose(Firehose):
     def convert(self,ilock,queryNodeSet):
         queryDict = {}
         queryDict['api'] = 'mtree'
-        upperQueryNodeNum = 50
+        #upperQueryNodeNum = 50
         insertFlag = False
         cmdCount = 1
         while True:
@@ -130,12 +130,12 @@ class WeiboFirehose(Firehose):
                         #构造查询字串
                         queryDict['body'] = weibo_route_data
                         ilock.acquire()
-                        if weibo_route_data[weiboType] == 'original':
-                                if len(queryNodeSet) < upperQueryNodeNum:
-                                        queryNodeSet.add(weibo_route_data[kmidKey])
-                                        queryDict[cmdKey] = 'insertqn'
-                                        insertFlag = True
-                        elif weibo_route_data[weiboType] == 'transmit' and \
+                        #if weibo_route_data[weiboType] == 'original':
+                        #        if len(queryNodeSet) < upperQueryNodeNum:
+                        #                queryNodeSet.add(weibo_route_data[kmidKey])
+                        #                queryDict[cmdKey] = 'insertqn'
+                        #                insertFlag = True
+                        if weibo_route_data[weiboType] == 'transmit' and \
                                 weibo_route_data[rmidKey] in queryNodeSet:
                                         queryDict[cmdKey] = 'insertfn'
                                         insertFlag = True
@@ -148,8 +148,8 @@ class WeiboFirehose(Firehose):
                                 printCMDinfo(cmdCount,reqStr,respStr)
                                 cmdCount += 1
                         insertFlag = False
-                else:
-                        print "don\'t fetch weibo firehose data this time"
+                #else:
+                #        print "don\'t fetch weibo firehose data this time"
 
 
 def printCMDinfo(cmdCount,reqStr,respStr):
@@ -260,8 +260,8 @@ def convertWeribo(host,port,listenHost,listenPort=10021):
         wf = WeiboFirehose(host,port)
         lis = Listener(listenHost,listenPort)
         ilock = threading.Lock()
-        #twf = threading.Thread(target=wf.convert,args=(ilock,lis.queryNodeSet))
-        #twf.start()
+        twf = threading.Thread(target=wf.convert,args=(ilock,lis.queryNodeSet))
+        twf.start()
         tlis = threading.Thread(target=lis.answer,args=(ilock,))
         tlis.start()
 
