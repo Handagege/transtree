@@ -29,11 +29,11 @@ def testTcpReq():
 
 
 def testWooReq():
-	mids = map(str,list(range(10,99)))
+	mids = map(str,list(range(10,20)))
         cmdList = ['del','add']
         count = 0
 	while True:
-                if count > 5:
+                if count > 9:
                         break
 		time.sleep(1)  
 	        reqDict = {"cmd":cmdList[random.randint(0,1)],"api":"wooTest"}
