@@ -38,7 +38,7 @@ def testWooReq():
                         break
 		time.sleep(1)  
 	        reqDict = {'cmd':cmdList[random.randint(0,1)],'api':'wooTest'}
-		reqDict['mids'] = random.sample(mids,random.randint(1,10))
+		reqDict['rmids'] = random.sample(mids,random.randint(1,10))
 		reqJson = json.dumps(reqDict)
                 respStr = binserverclient.reqbinserver_cluster([{'host':'10.77.96.32','port':10022}],0,reqJson)
                 printCMDinfo(count,reqJson,respStr)
@@ -56,7 +56,7 @@ def sendMonitoringMid():
 
 
 def recvMonitoringMid():
-        reqDict = {'cmd':'analysis','api':'mtree','body':''}
+        reqDict = {'cmd':'analysis','api':'mtree','body':'xxxx'}
         reqJson = json.dumps(reqDict)
         respStr = binserverclient.reqbinserver_cluster([{'host':'10.77.96.32','port':10022}],0,reqJson)
         printCMDinfo(1,reqJson,respStr)

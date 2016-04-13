@@ -27,10 +27,10 @@ void mtreeWorkInterface::manager(const Json::Value& req_root,Json::Value& resp_r
 {
         string cmd = req_root["cmd"].asString();
         resp_root["cmd"] = cmd;
-        string rmid = req_root["body"]["rmid"].asString();
-        string kmid = req_root["body"]["kmid"].asString();
         if( cmd == "insertqn" )
         {
+                string rmid = req_root["body"]["rmid"].asString();
+                string kmid = req_root["body"]["kmid"].asString();
                 Json::Value req_filter_root,rmids;
                 req_filter_root["cmd"] = "add";
                 rmids.append(rmid);
@@ -40,8 +40,10 @@ void mtreeWorkInterface::manager(const Json::Value& req_root,Json::Value& resp_r
                 mtreeIns.insertQueryMid(kmid,rmid);
                 resp_root["status"] = "done";
         }
-        else if( cmd == "insertfn" )
+        else if( cmd == "fn_insert" )
         {
+                string rmid = req_root["body"]["rmid"].asString();
+                string kmid = req_root["body"]["kmid"].asString();
                 string pmid = req_root["body"]["pmid"].asString();
                 cout << "@insert firehose node < rmid : " << rmid << " | pmid : " << 
                 pmid << " | kmid : " << kmid << " >" << endl;
@@ -50,6 +52,8 @@ void mtreeWorkInterface::manager(const Json::Value& req_root,Json::Value& resp_r
         }
         else if( cmd == "deleteqn" )
         {
+                string rmid = req_root["body"]["rmid"].asString();
+                string kmid = req_root["body"]["kmid"].asString();
                 Json::Value req_filter_root,rmids;
                 req_filter_root["cmd"] = "del";
                 rmids.append(rmid);

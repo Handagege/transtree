@@ -119,7 +119,7 @@ class WeiboFirehose(Firehose):
 
     def convert(self,ilock,queryNodeSet):
         queryDict = {}
-        queryDict['api'] = 'mtree'
+        queryDict['api'] = 'erlangshen'
         #upperQueryNodeNum = 50
         insertFlag = False
         cmdCount = 1
@@ -137,14 +137,14 @@ class WeiboFirehose(Firehose):
                         #                insertFlag = True
                         if weibo_route_data[weiboType] == 'transmit' and \
                                 weibo_route_data[rmidKey] in queryNodeSet:
-                                        queryDict[cmdKey] = 'insertfn'
+                                        queryDict[cmdKey] = 'fn_insert'
                                         insertFlag = True
                         ilock.release()
                         if insertFlag: 
                                 reqStr = json.dumps(queryDict)
                                 respStr = binserverclient.reqbinserver_cluster( \
                                         [{"host":self.sendHost,"port":self.sendPort}],0,reqStr)
-                                print 'query node number : {0}'.format(len(queryNodeSet))
+                                #print 'query node number : {0}'.format(len(queryNodeSet))
                                 printCMDinfo(cmdCount,reqStr,respStr)
                                 cmdCount += 1
                         insertFlag = False
@@ -244,11 +244,11 @@ class Listener():
 
 
         def deal(self,cmdDict):
-                mids = set(cmdDict['mids'])
+                mids = set(cmdDict['rmids'])
                 if cmdDict['cmd'] == 'add':
                         self.queryNodeSet.update(mids)
                         return 'add succ'
-                if cmdDict['cmd'] == 'del':
+                elif cmdDict['cmd'] == 'del':
                         self.queryNodeSet -= mids
                         return 'del succ'
                 else:

@@ -104,7 +104,7 @@ void CMultiWayTree::preOrder(mtreeNode* keyNode)
 }
 
 
-bool CMultiWayTree::getSubChildren(mtreeNode* keyNode, vector<mtreeNode*>& result)
+void CMultiWayTree::getSubChildren(mtreeNode* keyNode, vector<mtreeNode*>& result)
 {
         if(keyNode != NULL)
         {

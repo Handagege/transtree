@@ -144,7 +144,7 @@ public:
         void destoryTotalTree(){ destoryKeyNode(m_root); }
 private:
 
-        bool getSubChildren(mtreeNode* keyNode, vector<mtreeNode*>& result);
+        void getSubChildren(mtreeNode* keyNode, vector<mtreeNode*>& result);
 
         // 函数名：
         // 说明：搜索获得节点位置
