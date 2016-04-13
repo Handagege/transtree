@@ -34,7 +34,7 @@ void mtreeWorkInterface::manager(const Json::Value& req_root,Json::Value& resp_r
                 Json::Value req_filter_root,rmids;
                 req_filter_root["cmd"] = "add";
                 rmids.append(rmid);
-                req_filter_root["mids"] = rmids;
+                req_filter_root["rmids"] = rmids;
                 pushToFilterList(req_filter_root);
                 cout << "@insert query node < rmid : " << rmid << " | kmid : " << kmid << " >" << endl;
                 mtreeIns.insertQueryMid(kmid,rmid);

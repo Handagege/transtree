@@ -39,6 +39,7 @@ public:
                 hierarchy = thierarchy;
                 pruneFlag = tpruneFlag;
                 utime = time(NULL);
+                sChildren = set<mtreeNode *, nodeComp<mtreeNode *> >();
         }
 
         // 函数名：
@@ -136,6 +137,7 @@ public:
         //      [IN] keyNode -- 遍历起始节点
         // 返回值:
         void preOrder(mtreeNode* keyNode);
+        void printTotalTree();
 
         bool getSubChildren(const string& queryMid, const string& originMid, vector<mtreeNode*>& result);
 
@@ -163,7 +165,7 @@ private:
         //      [IN] routeNode -- 起始微博节点
         //      [OUT] singleResult -- 某一路径下的唯一命中节点
         // 返回值:
-        void searchRoute(const string& queryMid, mtreeNode* routeNode, mtreeNode*& singleResult);
+        void searchRoute(mtreeNode* queryNode, mtreeNode* routeNode, mtreeNode*& singleResult);
 
         // 函数名：
         // 说明：根据父子关系插入
@@ -183,6 +185,7 @@ private:
         // 参数：同上述
         // 返回值: 节点所处迭代器 *it 得到节点数据指针
         SnodeIter getIter(mtreeNode* parentNode,const string& keyMid);
+        SnodeIter getIter(mtreeNode* parentNode, mtreeNode* keyNode);
         //获取origin mid存储迭代器
 
         // 函数名：

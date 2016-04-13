@@ -32,16 +32,19 @@ CMultiWayTree::~CMultiWayTree()
 
 void CMultiWayTree::insertQueryMid(const string& queryMid, const string& originMid)
 {
+        pthread_mutex_lock(&m_mutex);
         mtreeNode* tqueryNode = new mtreeNode(originMid,0);
         if( insert(m_root,tqueryNode).second == false )
                 delete tqueryNode;
         SnodeIter origin_it = getOriginIter(originMid);
         insert(*origin_it,new mtreeNode(queryMid,(*origin_it)->hierarchy+1));
+        pthread_mutex_unlock(&m_mutex);
 }
 
 
 void CMultiWayTree::destoryQueryMid(const string& queryMid, const string& originMid)
 {
+        pthread_mutex_lock(&m_mutex);
         SnodeIter origin_it = getOriginIter(originMid);
         if( origin_it != m_root->sChildren.end() )
         {
@@ -57,17 +60,20 @@ void CMultiWayTree::destoryQueryMid(const string& queryMid, const string& origin
                         m_root->sChildren.erase(origin_it);
                 }
         }
+        pthread_mutex_unlock(&m_mutex);
 }
 
 
 void CMultiWayTree::destoryRootMid(const string& originMid)
 {
+        pthread_mutex_lock(&m_mutex);
         SnodeIter origin_it = getOriginIter(originMid);
         if( origin_it != m_root->sChildren.end() )
         {
                 destoryKeyNode(*origin_it);
                 m_root->sChildren.erase(origin_it);
         }
+        pthread_mutex_unlock(&m_mutex);
 }
 
 
@@ -104,6 +110,14 @@ void CMultiWayTree::preOrder(mtreeNode* keyNode)
 }
 
 
+void CMultiWayTree::printTotalTree()
+{
+        pthread_mutex_lock(&m_mutex);
+        preOrder(m_root);
+        pthread_mutex_unlock(&m_mutex);
+}
+
+
 void CMultiWayTree::getSubChildren(mtreeNode* keyNode, vector<mtreeNode*>& result)
 {
         if(keyNode != NULL)
@@ -117,6 +131,7 @@ void CMultiWayTree::getSubChildren(mtreeNode* keyNode, vector<mtreeNode*>& resul
 
 bool CMultiWayTree::getSubChildren(const string& queryMid, const string& originMid, vector<mtreeNode*>& result)
 {
+        pthread_mutex_lock(&m_mutex);
         SnodeIter origin_it = getOriginIter(originMid);
         if( origin_it != m_root->sChildren.end() )
         {
@@ -125,23 +140,26 @@ bool CMultiWayTree::getSubChildren(const string& queryMid, const string& originM
                         getSubChildren(*query_it,result);
                 else
                 {
+                        pthread_mutex_unlock(&m_mutex);
                         return false;
                 }
         }
         else
         {
+                pthread_mutex_unlock(&m_mutex);
                 return false;
         }
+        pthread_mutex_unlock(&m_mutex);
         return true;
 }
 
 
-void CMultiWayTree::searchRoute(const string& queryMid, mtreeNode* routeNode, mtreeNode*& singleResult)
+void CMultiWayTree::searchRoute(mtreeNode* queryNode, mtreeNode* routeNode, mtreeNode*& singleResult)
 {
-        if(routeNode != NULL && singleResult == NULL)
+        if( routeNode != NULL && singleResult == NULL && !(routeNode->sChildren.empty()) )
         {
                 //routeNode->print();
-                SnodeIter route_it = getIter(routeNode,queryMid);
+                SnodeIter route_it = getIter(routeNode,queryNode);
                 if(route_it != routeNode->sChildren.end())
                 {
                         //已经找到
@@ -150,7 +168,7 @@ void CMultiWayTree::searchRoute(const string& queryMid, mtreeNode* routeNode, mt
                 else{
                         SnodeIter sn_it = routeNode->sChildren.begin();
                         for(;sn_it != routeNode->sChildren.end();++sn_it)
-                                searchRoute(queryMid,*sn_it,singleResult);
+                                searchRoute(queryNode,*sn_it,singleResult);
                 }
         }
 }
@@ -164,6 +182,7 @@ void CMultiWayTree::search(const string& queryMid, const string& originMid, vect
                 //更新原创根节点时间
                 (*origin_it)->updateTime();
                 SnodeIter route_it = (*origin_it)->sChildren.begin();
+                mtreeNode* tempQueryNode = new mtreeNode(queryMid);
                 while(route_it != (*origin_it)->sChildren.end()){
                         if(queryMid == (*route_it)->mid){
                                 if( !((*route_it)->pruneFlag) )
@@ -171,7 +190,7 @@ void CMultiWayTree::search(const string& queryMid, const string& originMid, vect
                         }
                         else{
                                 mtreeNode* singleResult = NULL;
-                                searchRoute(queryMid,*route_it,singleResult);
+                                searchRoute(tempQueryNode,*route_it,singleResult);
                                 if(singleResult != NULL && !(singleResult->pruneFlag))
                                 {
                                         result.push_back(singleResult);
@@ -179,6 +198,7 @@ void CMultiWayTree::search(const string& queryMid, const string& originMid, vect
                         }
                         ++route_it;
                 }
+                delete tempQueryNode;
                 for(vector<mtreeNode*>::iterator it = result.begin(); it != result.end(); ++it)
                 {
                         (*it)->print();
@@ -192,6 +212,13 @@ SnodeIter CMultiWayTree::getIter(mtreeNode* parentNode,const string& keyMid)
         mtreeNode* tempNode = new mtreeNode(keyMid);
         SnodeIter result = parentNode->sChildren.find(tempNode);
         delete tempNode;
+        return result;
+}
+
+
+SnodeIter CMultiWayTree::getIter(mtreeNode* parentNode,mtreeNode* keyNode)
+{
+        SnodeIter result = parentNode->sChildren.find(keyNode);
         return result;
 }
 
