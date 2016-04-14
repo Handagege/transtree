@@ -33,11 +33,13 @@ CMultiWayTree::~CMultiWayTree()
 void CMultiWayTree::insertQueryMid(const string& queryMid, const string& originMid)
 {
         pthread_mutex_lock(&m_mutex);
-        mtreeNode* tqueryNode = new mtreeNode(originMid,0);
-        if( insert(m_root,tqueryNode).second == false )
-                delete tqueryNode;
+        mtreeNode* toriginNode = new mtreeNode(originMid,0);
+        if( insert(m_root,toriginNode).second == false )
+                delete toriginNode;
         SnodeIter origin_it = getOriginIter(originMid);
-        insert(*origin_it,new mtreeNode(queryMid,(*origin_it)->hierarchy+1));
+        mtreeNode* tqueryNode = new mtreeNode(queryMid,(*origin_it)->hierarchy+1);
+        if( insert(*origin_it,tqueryNode).second == false )
+                delete tqueryNode;
         pthread_mutex_unlock(&m_mutex);
 }
 
@@ -90,7 +92,9 @@ void CMultiWayTree::insertFirehoseMid(const string& keyMid, const string& parent
         {
                 int32_t keyMidHierarchy = (*vm_it)->hierarchy + 1;
                 bool keyMidPruneFlag = (keyMidHierarchy >= m_upperHierarchy);
-                insert(*vm_it,new mtreeNode(keyMid,keyMidHierarchy,keyMidPruneFlag));
+                mtreeNode* tkeyNode = new mtreeNode(keyMid,keyMidHierarchy,keyMidPruneFlag);
+                if( insert(*vm_it,tkeyNode).second == false )
+                        delete tkeyNode;
                 if( checkBranch(*vm_it) )
                         prune(*vm_it);
                 ++vm_it;
@@ -261,6 +265,7 @@ void CMultiWayTree::destoryKeyNode(mtreeNode* keyNode)
                         destoryKeyNode(*i);
                         ++i;
                 }
+                keyNode->sChildren.clear();
                 delete keyNode;
         }
 }

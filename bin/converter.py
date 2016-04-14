@@ -244,16 +244,22 @@ class Listener():
 
 
         def deal(self,cmdDict):
-                mids = set(cmdDict['rmids'])
-                if cmdDict['cmd'] == 'add':
+                mids = set(cmdDict.get('rmids',[]))
+                if not mids:
+                        return 'reqeust need key : \'rmids\''
+                cmdStr = cmdDict.get('cmd','')
+                if not cmdStr:
+                        return 'reqeust need key : \'cmd\''
+                if cmdStr == 'add':
                         self.queryNodeSet.update(mids)
                         return 'add succ'
-                elif cmdDict['cmd'] == 'del':
+                elif cmdStr == 'del':
                         self.queryNodeSet -= mids
                         return 'del succ'
+                elif cmdStr == 'get':
+                        return json.dumps(list(self.queryNodeSet))
                 else:
-                        print "command not found ..."
-                        return 'check cmd string'
+                        return 'cmd not found ... heck cmd string'
 
 
 def convertWeribo(host,port,listenHost,listenPort=10021):
