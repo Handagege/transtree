@@ -14,6 +14,8 @@ except Exception,data:
     import json
 
 import binserverclient
+import logging
+import logging.config
 
 
 rmidKey = 'rmid'
@@ -36,6 +38,12 @@ event = ["add"(发博，包括原创和转发), "update", "delete"]
 
 '''
 FIREHOSE_ID_LEN = 16
+
+
+#初始化logger日志打印器
+logging.config.fileConfig('./converter.conf')
+logger = logging.getLogger('general')
+
 
 class Firehose(object):
     def __init__(self, baseurl):
@@ -130,11 +138,6 @@ class WeiboFirehose(Firehose):
                         #构造查询字串
                         queryDict['body'] = weibo_route_data
                         ilock.acquire()
-                        #if weibo_route_data[weiboType] == 'original':
-                        #        if len(queryNodeSet) < upperQueryNodeNum:
-                        #                queryNodeSet.add(weibo_route_data[kmidKey])
-                        #                queryDict[cmdKey] = 'insertqn'
-                        #                insertFlag = True
                         if weibo_route_data[weiboType] == 'transmit' and \
                                 weibo_route_data[rmidKey] in queryNodeSet:
                                         queryDict[cmdKey] = 'fn_insert'
@@ -144,12 +147,12 @@ class WeiboFirehose(Firehose):
                                 reqStr = json.dumps(queryDict)
                                 respStr = binserverclient.reqbinserver_cluster( \
                                         [{"host":self.sendHost,"port":self.sendPort}],0,reqStr)
-                                #print 'query node number : {0}'.format(len(queryNodeSet))
-                                printCMDinfo(cmdCount,reqStr,respStr)
+                                if respStr:
+                                        printCMDinfoLog(cmdCount,reqStr,respStr)
+                                else:
+                                        printCMDerrorLog(cmdCount,reqStr,respStr)
                                 cmdCount += 1
                         insertFlag = False
-                #else:
-                #        print "don\'t fetch weibo firehose data this time"
 
 
 def printCMDinfo(cmdCount,reqStr,respStr):
@@ -159,24 +162,36 @@ def printCMDinfo(cmdCount,reqStr,respStr):
         print "at time : -- {0} --".format(time.strftime(ISOTIMEFORMAT, time.localtime()))
 
 
+def printCMDinfoLog(cmdCount,reqStr,respStr):
+        global logger
+        logger.debug("[ cmd number : {0} ] requst : {1}".format(cmdCount,reqStr))
+        logger.debug("response : {0}".format(respStr))
+
+
+def printCMDerrorLog(cmdCount,reqStr,respStr):
+        global logger
+        logger.error("get response False by requst : {0}".format(reqStr))
+
+
 #监听器
 class Listener():
         def __init__(self,host,listenPort):
+                global logger
                 try:
                         self.listenSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         self.listenSock.bind((host, listenPort))
                         self.listenSock.listen(1)
                 except:
-                        print 'init socket err!'
+                        logger.error('init socket err!')
                         exit(0)
                 self.queryNodeSet = set()
 
         def answer(self,ilock):
-                connCount = 0
+                #connCount = 0
                 while True:
                         conn,addr = self.listenSock.accept()
-                        connCount += 1
-                        print '\n...create connecter {0} times...'.format(connCount)
+                        #connCount += 1
+                        #print '\n...create connecter {0} times...'.format(connCount)
                         conn.settimeout(50)
                         self.labCommonAnswer(conn,ilock)
                         conn.close()
@@ -202,24 +217,27 @@ class Listener():
         
 
         def labCommonAnswer(self,conn,ilock):
+                global logger
                 cmdCount = 0
                 try:
                         while True:
                                 reqHead = conn.recv(16)
                                 cmdCount += 1
                                 if not reqHead:
-                                        print 'request head is None'
+                                        logger.debug("request head is None or 0, stop the connect ...")
                                         break
                                 body_len, log_id, tmp1, tmp2 = struct.unpack('IIII', reqHead)
+                                reqStr = ''
                                 if body_len == 0:
-                                        reqStr = 'request body is empty'
+                                        logger.error("request body is empty")
+                                        break
                                 else :
                                         recved_data = []
                                         recved_len = 0 
                                         while recved_len < body_len:
                                                 data = conn.recv(body_len - recved_len)
                                                 if len(data) <= 0:
-                                                        print 'receive no data'
+                                                        logger.error("onetime receive no data")
                                                         break
                                                 recved_data.append(data)
                                                 recved_len += len(data)
@@ -228,38 +246,44 @@ class Listener():
                                 ilock.acquire()
                                 respStr = self.deal(cmdDict)
                                 ilock.release()
-                                head = struct.pack('IIII', len(respStr), log_id, 0, 0)
-                                ret = conn.send(head)
-                                if ret != len(head) :
-                                        print 'can\'t sent message head'
-                                        break
-                                conn.sendall(respStr)
-                                printCMDinfo(cmdCount,reqStr,respStr)
-                                print '***query node number : {0}***'.format(len(self.queryNodeSet))
-                                print self.queryNodeSet
+                                if respStr:
+                                        respStr = str(respStr)
+                                        head = struct.pack('IIII', len(respStr), log_id, 0, 0)
+                                        ret = conn.send(head)
+                                        if ret != len(head) :
+                                                logger.error('can\'t sent message head')
+                                                break
+                                        conn.sendall(respStr)
+                                        printCMDinfoLog(cmdCount,reqStr,respStr)
+                                else:
+                                        printCMDerrorLog(cmdCount,reqStr,respStr)
                 except socket.timeout:
-                        print 'recv from connecter {0} time out'.format((conn,addr))
+                        logger.warning('recv from connecter {0} time out'.format((conn,addr)))
                 except Exception, e:
-                        print e
+                        logger.error(e)
 
 
         def deal(self,cmdDict):
+                global logger
                 mids = set(cmdDict.get('rmids',[]))
                 if not mids:
-                        return 'reqeust need key : \'rmids\''
+                        logger.error("reqeust {0} need key : \'rmids\'".format(cmdDict))
+                        return False
                 cmdStr = cmdDict.get('cmd','')
                 if not cmdStr:
-                        return 'reqeust need key : \'cmd\''
+                        logger.error("reqeust {0} need key : \'cmd\'".format(cmdDict))
+                        return False
                 if cmdStr == 'add':
                         self.queryNodeSet.update(mids)
-                        return 'add succ'
+                        return True
                 elif cmdStr == 'del':
                         self.queryNodeSet -= mids
-                        return 'del succ'
+                        return True
                 elif cmdStr == 'get':
                         return json.dumps(list(self.queryNodeSet))
                 else:
-                        return 'cmd not found ... heck cmd string'
+                        logger.error('cmd not found ... check cmd string')
+                        return False
 
 
 def convertWeribo(host,port,listenHost,listenPort=10021):

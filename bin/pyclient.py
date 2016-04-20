@@ -49,7 +49,7 @@ def sendMonitoringMid():
         #if len(sys.argv) != 4:
         #        print 'case <cmd> <rmid> <kmid>'
         #        exit(0)
-        reqDict = {'cmd':'insertqn','api':'erlangshen','body':{'rmid':sys.argv[2],'kmid':sys.argv[3]}}
+        reqDict = {'cmd':'qn_insert','api':'erlangshen','body':{'rmid':sys.argv[2],'kmid':sys.argv[3]}}
         #reqDict = {'cmd':'xx','api':'mtree','rmids':['1234567890']}
         #respStr = binserverclient.reqbinserver_cluster([{'host':'10.77.96.94','port':60138}],0,reqJson)
         reqJson = json.dumps(reqDict)
@@ -64,19 +64,28 @@ def recvMonitoringMid():
         printCMDinfo(1,reqJson,respStr)
 
 
-def randomSend(sendNum=100):
+def randomSend(sendNum=300):
+        rmids  = []
         for i in range(0,sendNum):
                 rmid = str(random.randint(0,900000))
-                reqDict = {'cmd':'insertqn','api':'erlangshen','body':{'rmid':rmid,'kmid':rmid}}
+                rmids.append(rmid)
+                reqDict = {'cmd':'qn_insert','api':'erlangshen','body':{'rmid':rmid,'kmid':rmid}}
                 reqJson = json.dumps(reqDict)
                 respStr = binserverclient.reqbinserver_cluster([{'host':'10.77.96.32','port':10022}],0,reqJson)
                 printCMDinfo(1,reqJson,respStr)
-                time.sleep(0.5)
-                for j in range(0,450):
+                for j in range(0,499):
+                        time.sleep(0.0008)
                         reqDict = {'cmd':'fn_insert','api':'erlangshen','body':{'rmid':rmid,
-                                'kmid':str(random.randint(0,1000000000000000)),'pmid':rmid}}
+                                'kmid':str(random.randint(0,100000000000000)),'pmid':rmid}}
                         reqJson = json.dumps(reqDict)
                         respStr = binserverclient.reqbinserver_cluster([{'host':'10.77.96.32','port':10022}],0,reqJson)
+        print "add 499 finish"
+        time.sleep(10)
+        for i in rmids:
+                reqDict = {'cmd':'deleteqn','api':'erlangshen','body':{'rmid':i,
+                        'kmid':i}}
+                reqJson = json.dumps(reqDict)
+                respStr = binserverclient.reqbinserver_cluster([{'host':'10.77.96.32','port':10022}],0,reqJson)
 
 
 def qingguoSend():

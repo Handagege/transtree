@@ -27,7 +27,7 @@ void mtreeWorkInterface::manager(const Json::Value& req_root,Json::Value& resp_r
 {
         string cmd = req_root["cmd"].asString();
         resp_root["cmd"] = cmd;
-        if( cmd == "insertqn" )
+        if( cmd == "qn_insert" )
         {
                 string rmid = req_root["body"]["rmid"].asString();
                 string kmid = req_root["body"]["kmid"].asString();
