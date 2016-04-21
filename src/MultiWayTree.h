@@ -39,7 +39,7 @@ public:
                 hierarchy = thierarchy;
                 pruneFlag = tpruneFlag;
                 utime = time(NULL);
-                sChildren = set<mtreeNode *, nodeComp<mtreeNode *> >();
+                //sChildren = set<mtreeNode *, nodeComp<mtreeNode *> >();
         }
 
         // 函数名：

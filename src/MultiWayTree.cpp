@@ -255,8 +255,6 @@ void CMultiWayTree::prune(mtreeNode* node)
 
 void CMultiWayTree::destoryKeyNode(mtreeNode* keyNode)
 {
-        cout << "DELETE : " ;
-        keyNode->print();
         if(keyNode != NULL)
         {
                 SnodeIter i = keyNode->sChildren.begin();
@@ -265,6 +263,8 @@ void CMultiWayTree::destoryKeyNode(mtreeNode* keyNode)
                         destoryKeyNode(*i);
                         ++i;
                 }
+                cout << "DELETE : " ;
+                keyNode->print();
                 keyNode->sChildren.clear();
                 delete keyNode;
         }
